@@ -1,10 +1,5 @@
-# Checks the final answers using another LLM as a judge (needs GROQ_API_KEY).
-#   faithful = every claim in the answer is supported by the retrieved chunks
-#   answered = the answer actually answers the question (not a refusal)
-#   correct  = the answer has the expected fact from the test set
-#
-# python evaluate_answers.py          -> answers from groq (gpt-oss-120b)
-# python evaluate_answers.py --local  -> answers from local ollama model
+# a second llm checks the answers. needs GROQ_API_KEY
+# use --local to test the ollama model instead of groq
 import os
 import re
 import sys
@@ -14,12 +9,12 @@ from groq import Groq
 from evaluate import test_set
 from rag import build_corpus, build_keyword_index, build_semantic_index, run_rag_pipeline
 
-# different model family than the one answering, so it doesn't grade its own answers
+# not the same model that writes the answers, otherwise it may go easy on itself
 JUDGE_MODEL = "qwen/qwen3.8-27b"
 
 judge = Groq()
 if "--local" in sys.argv:
-    # rag.py uses ollama when there is no key. the judge client already has the key
+    # without the key rag.py switches to ollama, judge already has the key
     del os.environ["GROQ_API_KEY"]
 
 

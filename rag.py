@@ -97,8 +97,7 @@ def keyword_search(query, bm25_index):
 
 
 def reciprocal_rank_fusion(rankings, k=60):
-    # only rank position is used, so bm25 scores (0-30) and cosine scores (0-1)
-    # dont need to be normalized before combining
+    # using rank instead of score, bm25 and cosine scores are on different scales
     scores = {}
     for ranking in rankings:
         for position, idx in enumerate(ranking):
@@ -163,7 +162,7 @@ Answer:"""
 
     messages = [{"role": "user", "content": prompt}]
 
-    # streaming so the answer starts showing before the full response is ready
+    # stream it so text shows up while it's still generating
     if os.environ.get("GROQ_API_KEY"):
         client = Groq()
         response = client.chat.completions.create(

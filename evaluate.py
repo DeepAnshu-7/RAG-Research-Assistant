@@ -1,5 +1,5 @@
-# Checks only the retrieval part, no LLM calls.
-# A retrieved chunk is counted as correct if it is from the right paper and has one of the keywords.
+# only checks the search part, no llm calls
+# a chunk counts as correct if it's from the right paper and has one of the keywords
 from rag import (build_corpus, build_keyword_index, build_semantic_index, hybrid_search,
                  keyword_search, rerank, semantic_search)
 
