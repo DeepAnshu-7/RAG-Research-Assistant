@@ -38,6 +38,9 @@ def chunk_text(text, chunk_size=150, overlap=30):
 
 
 def build_corpus(data_folder="data"):
+    if not os.path.isdir(data_folder):
+        raise FileNotFoundError(f"'{data_folder}' folder not found. Create it and put the PDFs inside (see README)")
+
     corpus = []
     for filename in sorted(os.listdir(data_folder)):
         if not filename.endswith(".pdf"):

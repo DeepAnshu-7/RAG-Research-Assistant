@@ -1,4 +1,4 @@
-from rag import chunk_text, find_paper_in_query, reciprocal_rank_fusion, tokenize
+from rag import build_corpus, chunk_text, find_paper_in_query, reciprocal_rank_fusion, tokenize
 
 text = " ".join(str(i) for i in range(200))
 chunks = chunk_text(text, chunk_size=150, overlap=30)
@@ -13,5 +13,11 @@ assert reciprocal_rank_fusion([[1, 2, 3], [4, 2, 5]])[0] == 2
 assert tokenize("Kappa, F1-score?") == ["kappa", "f1", "score"]
 assert find_paper_in_query("what dataset does Paper 3 use") == "paper3.pdf"
 assert find_paper_in_query("what dataset was used") is None
+
+try:
+    build_corpus("folder_that_does_not_exist")
+    assert False, "should have raised"
+except FileNotFoundError:
+    pass
 
 print("all tests passed")

@@ -20,8 +20,12 @@ def load_system():
     return corpus, faiss_index, bm25_index
 
 
-with st.spinner("Loading papers..."):
-    corpus, faiss_index, bm25_index = load_system()
+try:
+    with st.spinner("Loading papers..."):
+        corpus, faiss_index, bm25_index = load_system()
+except (FileNotFoundError, ValueError) as e:
+    st.error(str(e))
+    st.stop()
 
 with st.sidebar:
     st.subheader("Indexed papers", anchor=False)
