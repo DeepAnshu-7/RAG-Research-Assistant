@@ -1,23 +1,16 @@
+import re
+
 import streamlit as st
 
-from rag import build_corpus, build_keyword_index, build_semantic_index, run_rag_pipeline
+from rag import load_index, run_rag_pipeline
 
 st.set_page_config(page_title="Research Paper Assistant")
 st.title("Research Paper Assistant", anchor=False)
 
-st.write(
-    "Search across 7 research papers on ECG, EEG and sleep studies. "
-    "Answers are generated only from the papers, with the source paper and page number for every claim."
-
-)
-
 # runs only once, not on every rerun of the page
 @st.cache_resource
 def load_system():
-    corpus = build_corpus()
-    faiss_index = build_semantic_index(corpus)
-    bm25_index = build_keyword_index(corpus)
-    return corpus, faiss_index, bm25_index
+    return load_index()
 
 
 try:
@@ -27,9 +20,16 @@ except (FileNotFoundError, ValueError) as e:
     st.error(str(e))
     st.stop()
 
+# sort by the number in the name, so paper2 comes before paper10
+papers = sorted(set((c["source"], c["title"]) for c in corpus),
+                key=lambda p: [int(part) if part.isdigit() else part for part in re.split(r"(\d+)", p[0])])
+st.write(
+    f"Search across {len(papers)} research papers on ECG, EEG and sleep studies. "
+    "Answers are generated only from the papers, with the source paper and page number for every claim."
+)
+
 with st.sidebar:
     st.subheader("Indexed papers", anchor=False)
-    papers = sorted(set((c["source"], c["title"]) for c in corpus))
     for source, title in papers:
         st.write(f"**{source}**: {title}")
     st.caption('Mention a paper by name (e.g. "paper3") to search only that paper.')

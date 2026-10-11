@@ -1,5 +1,6 @@
 import logging
 import os
+import pickle
 import re
 
 import faiss
@@ -79,9 +80,10 @@ def tokenize(text):
     return re.findall(r"\w+", text.lower())
 
 
-def build_semantic_index(corpus):
-    texts = [c["text"] for c in corpus]
-    embeddings = embed_model.encode(texts, normalize_embeddings=True)
+def build_semantic_index(corpus, embeddings=None):
+    if embeddings is None:
+        texts = [c["text"] for c in corpus]
+        embeddings = embed_model.encode(texts, normalize_embeddings=True)
 
     # vectors are normalized, so inner product = cosine similarity
     index = faiss.IndexFlatIP(embeddings.shape[1])
@@ -92,6 +94,35 @@ def build_semantic_index(corpus):
 def build_keyword_index(corpus):
     tokenized_corpus = [tokenize(c["text"]) for c in corpus]
     return BM25Okapi(tokenized_corpus)
+
+
+def load_index(data_folder="data"):
+    # reading the pdfs and making embeddings takes ~7 sec, so save them and reuse
+    # until a pdf is added, removed or changed (or rag.py itself is edited)
+    cache_file = os.path.join(data_folder, "index_cache.pkl")
+    fingerprint = None
+    if os.path.isdir(data_folder):
+        pdfs = sorted(f for f in os.listdir(data_folder) if f.endswith(".pdf"))
+        fingerprint = [(f, os.path.getsize(os.path.join(data_folder, f)), os.path.getmtime(os.path.join(data_folder, f))) for f in pdfs]
+        fingerprint.append(os.path.getmtime(__file__))
+
+    saved = None
+    if fingerprint and os.path.exists(cache_file):
+        try:
+            with open(cache_file, "rb") as f:
+                saved = pickle.load(f)
+        except Exception:
+            saved = None  # broken cache file, just build again
+
+    if saved and saved["fingerprint"] == fingerprint:
+        corpus, embeddings = saved["corpus"], saved["embeddings"]
+    else:
+        corpus = build_corpus(data_folder)
+        embeddings = embed_model.encode([c["text"] for c in corpus], normalize_embeddings=True)
+        with open(cache_file, "wb") as f:
+            pickle.dump({"fingerprint": fingerprint, "corpus": corpus, "embeddings": embeddings}, f)
+
+    return corpus, build_semantic_index(corpus, embeddings), build_keyword_index(corpus)
 
 
 def semantic_search(query, faiss_index, corpus):
@@ -206,9 +237,7 @@ def run_rag_pipeline(query, corpus, faiss_index, bm25_index):
 
 if __name__ == "__main__":
     print("Loading papers and building indexes...")
-    corpus = build_corpus()
-    faiss_index = build_semantic_index(corpus)
-    bm25_index = build_keyword_index(corpus)
+    corpus, faiss_index, bm25_index = load_index()
     print(f"Ready! {len(corpus)} chunks loaded. Type 'exit' to quit.\n")
 
     while True:

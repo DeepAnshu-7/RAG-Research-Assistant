@@ -1,7 +1,6 @@
 # only checks the search part, no llm calls
 # a chunk counts as correct if it's from the right paper and has one of the keywords
-from rag import (build_corpus, build_keyword_index, build_semantic_index, hybrid_search,
-                 keyword_search, rerank, semantic_search)
+from rag import hybrid_search, keyword_search, load_index, rerank, semantic_search
 
 test_set = [
     {"question": "How many sleep studies was PFTSleep trained on and what kappa did it get?", "paper": "paper4.pdf", "keywords": ["13 888", "kappa"]},
@@ -80,9 +79,7 @@ def search(method, query, corpus, faiss_index, bm25_index, top_k=5):
 
 
 if __name__ == "__main__":
-    corpus = build_corpus()
-    faiss_index = build_semantic_index(corpus)
-    bm25_index = build_keyword_index(corpus)
+    corpus, faiss_index, bm25_index = load_index()
     print(f"{len(corpus)} chunks, {len(test_set)} test questions\n")
 
     print(f"{'method':<18}{'Hit@1':>8}{'Hit@3':>8}{'MRR@5':>8}")

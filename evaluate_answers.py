@@ -8,7 +8,7 @@ import time
 from groq import Groq
 
 from evaluate import test_set
-from rag import build_corpus, build_keyword_index, build_semantic_index, run_rag_pipeline
+from rag import load_index, run_rag_pipeline
 
 # not the same model that writes the answers, otherwise it may go easy on itself
 JUDGE_MODEL = "qwen/qwen3.8-27b"
@@ -57,9 +57,7 @@ CORRECT: YES or NO"""
 
 
 if __name__ == "__main__":
-    corpus = build_corpus()
-    faiss_index = build_semantic_index(corpus)
-    bm25_index = build_keyword_index(corpus)
+    corpus, faiss_index, bm25_index = load_index()
 
     if os.environ.get("GROQ_API_KEY"):
         print(f"answer model: {os.environ.get('GROQ_MODEL', 'openai/gpt-oss-120b')} (groq)")

@@ -1,4 +1,6 @@
-from rag import build_corpus, chunk_text, find_paper_in_query, reciprocal_rank_fusion, tokenize
+import os
+
+from rag import build_corpus, chunk_text, load_index, find_paper_in_query, reciprocal_rank_fusion, tokenize
 
 text = " ".join(str(i) for i in range(200))
 chunks = chunk_text(text, chunk_size=150, overlap=30)
@@ -19,5 +21,11 @@ try:
     assert False, "should have raised"
 except FileNotFoundError:
     pass
+
+# second load should come from the cache and give the same chunks
+if os.path.isdir("data"):
+    corpus1, _, _ = load_index()
+    corpus2, _, _ = load_index()
+    assert corpus1 == corpus2
 
 print("all tests passed")
