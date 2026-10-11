@@ -46,18 +46,26 @@ def build_corpus(data_folder="data"):
         if not filename.endswith(".pdf"):
             continue
 
-        reader = PdfReader(os.path.join(data_folder, filename))
+        try:
+            reader = PdfReader(os.path.join(data_folder, filename))
+        except Exception as e:
+            # a broken pdf shouldn't stop the other papers from loading
+            print(f"Skipping {filename}: {e}")
+            continue
+        # title saved inside the pdf, if there is none just use the filename
+        title = (reader.metadata.title if reader.metadata else None) or filename
         for page_num, page in enumerate(reader.pages, start=1):
             text = page.extract_text() or ""
 
             # stop at the references section. it has titles of other papers
             # and search was returning those chunks for wrong questions
-            match = re.search(r"^\s*(references|bibliography)\s*$", text, flags=re.IGNORECASE | re.MULTILINE)
+            # some papers number it, like "VII. REFERENCES"
+            match = re.search(r"^\s*([ivx]+\.|\d+\.?)?\s*(references|bibliography)\s*$", text, flags=re.IGNORECASE | re.MULTILINE)
             if match:
                 text = text[:match.start()]
 
             for chunk in chunk_text(text):
-                corpus.append({"text": chunk, "source": filename, "page": page_num})
+                corpus.append({"text": chunk, "source": filename, "title": title, "page": page_num})
 
             if match:
                 break
@@ -150,7 +158,7 @@ def generate_answer(query, chunks):
 
     context = ""
     for i, c in enumerate(chunks, start=1):
-        context += f"[{i}] ({c['source']}, page {c['page']})\n{c['text']}\n\n"
+        context += f"[{i}] ({c['source']}: {c['title']}, page {c['page']})\n{c['text']}\n\n"
 
     prompt = f"""You are a research assistant. Answer the question using ONLY the numbered context below.
 Write the answer in 1-4 full sentences. End each sentence with the number of the context it came from, e.g. [1] or [2][3].
@@ -218,5 +226,5 @@ if __name__ == "__main__":
         print("\n")
 
         for i, c in enumerate(sources, start=1):
-            print(f"  [{i}] {c['source']} - page {c['page']}")
+            print(f"  [{i}] {c['source']} - {c['title']} - page {c['page']}")
         print()

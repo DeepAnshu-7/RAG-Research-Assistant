@@ -29,9 +29,9 @@ except (FileNotFoundError, ValueError) as e:
 
 with st.sidebar:
     st.subheader("Indexed papers", anchor=False)
-    papers = sorted(set(c["source"] for c in corpus))
-    for paper in papers:
-        st.write(paper)
+    papers = sorted(set((c["source"], c["title"]) for c in corpus))
+    for source, title in papers:
+        st.write(f"**{source}**: {title}")
     st.caption('Mention a paper by name (e.g. "paper3") to search only that paper.')
 
 query = st.text_input("Question", placeholder="e.g. Which dataset was used to predict stroke risk?")
@@ -44,5 +44,5 @@ if query:
 
     st.subheader("Sources", anchor=False)
     for i, c in enumerate(sources, start=1):
-        with st.expander(f"[{i}] {c['source']}, page {c['page']}"):
+        with st.expander(f"[{i}] {c['source']}: {c['title']}, page {c['page']}"):
             st.write(c["text"])

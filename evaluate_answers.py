@@ -3,6 +3,7 @@
 import os
 import re
 import sys
+import time
 
 from groq import Groq
 
@@ -83,6 +84,9 @@ if __name__ == "__main__":
               f"correct={'Y' if correct else 'N'} | {item['question']}")
         if not faithful or not correct:
             print(f"    answer: {answer}")
+
+        # free groq tier allows ~8000 tokens per minute, one question uses ~2000
+        time.sleep(15)
 
     n = len(test_set)
     print(f"\nFaithfulness: {faithful_count / n:.0%}")
